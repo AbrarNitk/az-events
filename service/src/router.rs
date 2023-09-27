@@ -17,11 +17,16 @@ pub async fn handler(
     config: Config,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>, http_service::errors::RouteError> {
-    tracing::info!(target = "request", method = req.method().as_str(), path = req.uri().path());
+    tracing::info!(
+        target = "request",
+        method = req.method().as_str(),
+        path = req.uri().path()
+    );
     match (req.method(), req.uri().path()) {
         (&hyper::Method::GET, "/api/event/health/") => {
-            let mut response = hyper::Response::new(
-                hyper::Body::from(serde_json::to_string(&serde_json::json!({"success": true, "msg": "health is okay"}))?));
+            let mut response = hyper::Response::new(hyper::Body::from(serde_json::to_string(
+                &serde_json::json!({"success": true, "msg": "health is okay"}),
+            )?));
             *response.status_mut() = hyper::StatusCode::OK;
             response.headers_mut().append(
                 hyper::header::CONTENT_TYPE,
@@ -34,13 +39,24 @@ pub async fn handler(
             let event: http_service::controller::RequestEvent = from_body(body).await?;
             let mut response = hyper::Response::new(hyper::Body::empty());
             if let Err(err) = http_service::controller::handle_event(&config, event).await {
-                tracing::error!(method = p.method.as_str(), path = p.uri.path(), "error" = err.to_string());
+                tracing::error!(
+                    method = p.method.as_str(),
+                    path = p.uri.path(),
+                    "error" = err.to_string()
+                );
                 *response.body_mut() = hyper::Body::from(serde_json::to_string(
-                    &serde_json::json!({"success": false, "msg": "something went wrong"}))?);
+                    &serde_json::json!({"success": false, "msg": "something went wrong"}),
+                )?);
                 *response.status_mut() = hyper::StatusCode::INTERNAL_SERVER_ERROR;
             } else {
+                tracing::info!(
+                    method = p.method.as_str(),
+                    path = p.uri.path(),
+                    "success" = "success"
+                );
                 *response.body_mut() = hyper::Body::from(serde_json::to_string(
-                    &serde_json::json!({"success": true, "msg": "event put successfully"}))?);
+                    &serde_json::json!({"success": true, "msg": "event put successfully"}),
+                )?);
                 *response.status_mut() = hyper::StatusCode::OK;
             }
             response.headers_mut().append(
@@ -49,15 +65,17 @@ pub async fn handler(
             );
             Ok(response)
         }
-        _ => {
-            Ok(response(serde_json::to_string(&serde_json::json!({
+        _ => Ok(response(
+            serde_json::to_string(&serde_json::json!({
                 "success": false,
                 "error": {
                     "status": "NOT_FOUND",
                     "path": req.uri().path()
                 }
-            })).unwrap(), hyper::StatusCode::NOT_FOUND))
-        }
+            }))
+            .unwrap(),
+            hyper::StatusCode::NOT_FOUND,
+        )),
     }
 }
 

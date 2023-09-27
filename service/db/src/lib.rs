@@ -1,8 +1,7 @@
+pub mod events;
 pub mod pg;
 pub mod redis;
 pub mod schema;
-pub mod events;
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum DBError {
