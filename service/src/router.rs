@@ -16,24 +16,33 @@ pub async fn handler(
 ) -> Result<hyper::Response<hyper::Body>, http_service::errors::RouteError> {
     tracing::info!(target = "request", method = req.method().as_str(), path = req.uri().path());
     match (req.method(), req.uri().path()) {
-        (&hyper::Method::GET, "/api/health/") => {
-            let mut response = hyper::Response::new(hyper::Body::empty());
-            let resp = http_service::controller::get_user_profile()?;
-            *response.body_mut() = hyper::Body::from(serde_json::to_string(&resp)?);
+        (&hyper::Method::GET, "/api/event/health/") => {
+            let mut response = hyper::Response::new(
+                hyper::Body::from(serde_json::to_string(&serde_json::json!({"success": true, "msg": "health is okay"}))?));
             *response.status_mut() = hyper::StatusCode::OK;
             response.headers_mut().append(
                 hyper::header::CONTENT_TYPE,
-                hyper::http::HeaderValue::from_str("application/json").unwrap(), // TODO: Remove unwrap
+                hyper::http::HeaderValue::from_str("application/json").unwrap(),
             );
             Ok(response)
         }
-        (&hyper::Method::POST, "/") => {
+        (&hyper::Method::POST, "/api/event/") => {
+            let (p, body) = req.into_parts();
+            let event: http_service::controller::RequestEvent = from_body(body).await?;
             let mut response = hyper::Response::new(hyper::Body::empty());
-            *response.body_mut() = hyper::Body::from("POST Response");
-            *response.status_mut() = hyper::StatusCode::OK;
+            if let Err(err) = http_service::controller::handle_event(event).await {
+                tracing::error!(method = p.method.as_str(), path = p.uri.path(), "error" = err.to_string());
+                *response.body_mut() = hyper::Body::from(serde_json::to_string(
+                    &serde_json::json!({"success": false, "msg": "something went wrong"}))?);
+                *response.status_mut() = hyper::StatusCode::INTERNAL_SERVER_ERROR;
+            } else {
+                *response.body_mut() = hyper::Body::from(serde_json::to_string(
+                    &serde_json::json!({"success": true, "msg": "event put successfully"}))?);
+                *response.status_mut() = hyper::StatusCode::OK;
+            }
             response.headers_mut().append(
                 hyper::header::CONTENT_TYPE,
-                hyper::http::HeaderValue::from_str("application/json").unwrap(), // TODO: Remove unwrap
+                hyper::http::HeaderValue::from_str("application/json").unwrap(),
             );
             Ok(response)
         }
