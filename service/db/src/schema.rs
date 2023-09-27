@@ -3,6 +3,7 @@
 diesel::table! {
     auth_group (id) {
         id -> Int4,
+        #[max_length = 150]
         name -> Text,
     }
 }
@@ -18,8 +19,10 @@ diesel::table! {
 diesel::table! {
     auth_permission (id) {
         id -> Int4,
+        #[max_length = 255]
         name -> Text,
         content_type_id -> Int4,
+        #[max_length = 100]
         codename -> Text,
     }
 }
@@ -27,12 +30,17 @@ diesel::table! {
 diesel::table! {
     auth_user (id) {
         id -> Int4,
+        #[max_length = 128]
         password -> Text,
         last_login -> Nullable<Timestamptz>,
         is_superuser -> Bool,
+        #[max_length = 150]
         username -> Text,
+        #[max_length = 150]
         first_name -> Text,
+        #[max_length = 150]
         last_name -> Text,
+        #[max_length = 254]
         email -> Text,
         is_staff -> Bool,
         is_active -> Bool,
@@ -57,10 +65,21 @@ diesel::table! {
 }
 
 diesel::table! {
+    az_events (id) {
+        id -> Int8,
+        #[max_length = 127]
+        ekind -> Text,
+        edata -> Jsonb,
+        created_on -> Timestamptz,
+    }
+}
+
+diesel::table! {
     django_admin_log (id) {
         id -> Int4,
         action_time -> Timestamptz,
         object_id -> Nullable<Text>,
+        #[max_length = 200]
         object_repr -> Text,
         action_flag -> Int2,
         change_message -> Text,
@@ -72,7 +91,9 @@ diesel::table! {
 diesel::table! {
     django_content_type (id) {
         id -> Int4,
+        #[max_length = 100]
         app_label -> Text,
+        #[max_length = 100]
         model -> Text,
     }
 }
@@ -80,7 +101,9 @@ diesel::table! {
 diesel::table! {
     django_migrations (id) {
         id -> Int8,
+        #[max_length = 255]
         app -> Text,
+        #[max_length = 255]
         name -> Text,
         applied -> Timestamptz,
     }
@@ -88,6 +111,7 @@ diesel::table! {
 
 diesel::table! {
     django_session (session_key) {
+        #[max_length = 40]
         session_key -> Text,
         session_data -> Text,
         expire_date -> Timestamptz,
@@ -111,6 +135,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     auth_user,
     auth_user_groups,
     auth_user_user_permissions,
+    az_events,
     django_admin_log,
     django_content_type,
     django_migrations,

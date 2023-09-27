@@ -1,3 +1,5 @@
+use crate::Config;
+
 #[derive(thiserror::Error, Debug)]
 pub enum BodyError {
     #[error("HyperBodyReadError: {}", _0)]
@@ -12,6 +14,7 @@ pub async fn from_body<T: serde::de::DeserializeOwned>(b: hyper::Body) -> Result
 }
 
 pub async fn handler(
+    config: Config,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>, http_service::errors::RouteError> {
     tracing::info!(target = "request", method = req.method().as_str(), path = req.uri().path());
@@ -30,7 +33,7 @@ pub async fn handler(
             let (p, body) = req.into_parts();
             let event: http_service::controller::RequestEvent = from_body(body).await?;
             let mut response = hyper::Response::new(hyper::Body::empty());
-            if let Err(err) = http_service::controller::handle_event(event).await {
+            if let Err(err) = http_service::controller::handle_event(&config, event).await {
                 tracing::error!(method = p.method.as_str(), path = p.uri.path(), "error" = err.to_string());
                 *response.body_mut() = hyper::Body::from(serde_json::to_string(
                     &serde_json::json!({"success": false, "msg": "something went wrong"}))?);

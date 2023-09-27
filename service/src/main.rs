@@ -1,4 +1,6 @@
-pub struct HttpService;
+pub struct HttpService {
+    db_pool: db::pg::DbPool,
+}
 
 impl hyper::service::Service<hyper::Request<hyper::Body>> for HttpService {
     type Response = hyper::Response<hyper::Body>;
@@ -15,8 +17,9 @@ impl hyper::service::Service<hyper::Request<hyper::Body>> for HttpService {
     }
 
     fn call(&mut self, req: hyper::Request<hyper::Body>) -> Self::Future {
-        Box::pin(async {
-            match service::router::handler(req).await {
+        let config = service::Config { db_pool: self.db_pool.clone() };
+        Box::pin(async move {
+            match service::router::handler(config, req).await {
                 Ok(r) => Ok(r),
                 Err(e) => {
                     tracing::error!(target = "ServerHandlerError", "Error: {}", e);
@@ -59,18 +62,19 @@ async fn http_main() -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
 
     // if needed so get the pool and send it to the `HttpService`
     // Database pool
-    // let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL env var not found");
-    // let db_pool = db::pg::get_connection_pool(db_url.as_str());
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL env var not found");
+    let db_pool = db::pg::get_connection_pool(db_url.as_str());
 
     // Redis pool
     // let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL env var not found");
     // let redis_pool = db::redis::get_pool(redis_url.as_str());
 
     loop {
+        let db_pool = db_pool.clone();
         let (tcp_stream, _) = listener.accept().await?;
         tokio::task::spawn(async move {
             if let Err(http_err) = hyper::server::conn::Http::new()
-                .serve_connection(tcp_stream, HttpService {})
+                .serve_connection(tcp_stream, HttpService { db_pool })
                 .await
             {
                 tracing::error!("Error while serving HTTP connection: {}", http_err);

@@ -1,8 +1,8 @@
 export PYTHONPATH=${PROJDIR}/dj
 export DIESEL_CONFIG_FILE=${PROJDIR}/diesel.toml
 
-DATABASE_NAME=events
-ROLE_NAME=events
+DATABASE_NAME=az_events
+ROLE_NAME=az_events
 PASSWORD=events
 
 export DATABASE_URL=postgres://${ROLE_NAME}:${PASSWORD}@127.0.0.1:5432/${DATABASE_NAME}

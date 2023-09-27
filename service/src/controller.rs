@@ -24,6 +24,7 @@ pub struct Edata {
 #[derive(thiserror::Error, Debug)]
 pub enum HandleEventError {}
 
-pub async fn handle_event(event: RequestEvent) -> Result<(), HandleEventError> {
+pub async fn handle_event(config: &crate::Config, event: RequestEvent) -> Result<(), HandleEventError> {
+    let mut conn = config.db_pool.get().unwrap();
     Ok(())
 }
