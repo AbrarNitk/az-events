@@ -1,4 +1,5 @@
 /target
 .idea
-.env
+.venv
 dj/proj/local_settings.py
+*/**/__pycache__/
