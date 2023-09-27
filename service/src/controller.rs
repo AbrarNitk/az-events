@@ -6,7 +6,8 @@ pub struct RequestEvent {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct Edata {
-    route: String,
+    path: String,
+    method: String,
 }
 
 #[derive(thiserror::Error, Debug)]
