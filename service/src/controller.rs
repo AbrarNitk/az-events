@@ -10,6 +10,12 @@ pub struct Edata {
     method: String,
     user_agent: Option<String>,
     referer: Option<String>,
+    // x-real-ip
+    ip: Option<String>,
+    // x-forwarded-for
+    forwarder_for: Option<String>,
+    // sec-ch-ua-platform
+    platform: Option<String>,
 }
 
 #[derive(thiserror::Error, Debug)]
