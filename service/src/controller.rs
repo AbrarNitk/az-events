@@ -8,6 +8,8 @@ pub struct RequestEvent {
 pub struct Edata {
     path: String,
     method: String,
+    user_agent: Option<String>,
+    referer: Option<String>,
 }
 
 #[derive(thiserror::Error, Debug)]
