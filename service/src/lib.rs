@@ -1,4 +1,4 @@
-extern crate self as http_service;
+extern crate self as service;
 
 pub mod controller;
 pub mod errors;

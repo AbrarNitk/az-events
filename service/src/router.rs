@@ -16,7 +16,7 @@ pub async fn from_body<T: serde::de::DeserializeOwned>(b: hyper::Body) -> Result
 pub async fn handler(
     config: Config,
     req: hyper::Request<hyper::Body>,
-) -> Result<hyper::Response<hyper::Body>, http_service::errors::RouteError> {
+) -> Result<hyper::Response<hyper::Body>, service::errors::RouteError> {
     tracing::info!(
         target = "request",
         method = req.method().as_str(),
@@ -36,9 +36,9 @@ pub async fn handler(
         }
         (&hyper::Method::POST, "/api/event/") => {
             let (p, body) = req.into_parts();
-            let event: http_service::controller::RequestEvent = from_body(body).await?;
+            let event: service::controller::RequestEvent = from_body(body).await?;
             let mut response = hyper::Response::new(hyper::Body::empty());
-            if let Err(err) = http_service::controller::handle_event(&config, event).await {
+            if let Err(err) = service::controller::handle_event(&config, event).await {
                 tracing::error!(
                     method = p.method.as_str(),
                     path = p.uri.path(),
@@ -65,6 +65,36 @@ pub async fn handler(
             );
             Ok(response)
         }
+        (&hyper::Method::GET, "/api/events/") => {
+            match service::controller::get_events(&config).await {
+                Ok(r) => {
+                    let success_response = serde_json::json!({
+                        "success": true,
+                        "data": serde_json::to_value(&r)?
+                    });
+
+                    Ok(response(
+                        serde_json::to_string(&success_response)?,
+                        hyper::StatusCode::OK,
+                    ))
+                }
+                Err(e) => {
+                    tracing::error!(message = "get-event-error", err = format!("{:?}", e));
+                    let error_response = serde_json::json!({
+                        "success": false,
+                        "error": {
+                            "status": "INTERNAL_SERVER_ERROR",
+                            "message": format!("{:?}", e)
+                        }
+                    });
+                    Ok(response(
+                        serde_json::to_string(&error_response)?,
+                        hyper::StatusCode::INTERNAL_SERVER_ERROR,
+                    ))
+                }
+            }
+        }
+
         _ => Ok(response(
             serde_json::to_string(&serde_json::json!({
                 "success": false,

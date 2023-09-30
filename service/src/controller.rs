@@ -37,3 +37,20 @@ pub async fn handle_event(
     )?;
     Ok(())
 }
+
+#[derive(serde::Serialize, Debug)]
+pub struct GetEventResponse {
+    count: i64,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum GetEventError {
+    #[error("DBError: {}", _0)]
+    DBError(#[from] db::DBError),
+}
+
+pub async fn get_events(config: &crate::Config) -> Result<GetEventResponse, GetEventError> {
+    Ok(GetEventResponse {
+        count: db::events::count(&config.db_pool, "page_visit")?,
+    })
+}
